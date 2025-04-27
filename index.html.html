@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Number Game</title>
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            color: #333;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #ff7f50;
+        }
+
+        .game-container {
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border: 2px solid #ff7f50;
+            border-radius: 10px;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        input, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ff7f50;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #ff7f50;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #e5673b;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message, .timer, .leaderboard {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .difficulty {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Guess the Number</h1>
+    <div class="game-container">
+        <div class="difficulty">
+            <label for="difficulty">Choose Difficulty: </label>
+            <select id="difficulty">
+                <option value="easy">Easy (1-50)</option>
+                <option value="medium">Medium (1-100)</option>
+                <option value="hard">Hard (1-200)</option>
+            </select>
+        </div>
+        <button id="startButton" onclick="startGame()">Start Game</button>
+        <div id="gameControls" class="hidden">
+            <p>I'm thinking of a number. Can you guess what it is?</p>
+            <p class="timer" id="timer">Time Left: 60 seconds</p>
+            <input type="number" id="guessInput" placeholder="Enter your guess">
+            <button onclick="checkGuess()">Submit Guess</button>
+            <div class="message" id="message"></div>
+        </div>
+        <div class="leaderboard">
+            <h3>Leaderboard:</h3>
+            <p id="leaderboard">Loading leaderboard...</p>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2025 Cole's Game Website. Have fun!</p>
+    </footer>
+
+    <script>
+        let randomNumber, maxNumber, attempts, timeLeft, timerInterval;
+        const leaderboardDisplay = document.getElementById('leaderboard');
+        const message = document.getElementById('message');
+        const timerDisplay = document.getElementById('timer');
+        const difficultySelect = document.getElementById('difficulty');
+
+        function loadLeaderboard() {
+            const savedLeaderboard = localStorage.getItem('leaderboard');
+            if (savedLeaderboard) {
+                const scores = JSON.parse(savedLeaderboard);
+                leaderboardDisplay.textContent = scores
+                    .map((score, index) => `#${index + 1}: ${score} attempts`)
+                    .join('\n');
+            } else {
+                leaderboardDisplay.textContent = 'No scores yet. Be the first!';
+            }
+        }
+
+        function saveLeaderboard(scores) {
+            localStorage.setItem('leaderboard', JSON.stringify(scores));
+        }
+
+        function updateLeaderboard(attempts) {
+            const savedLeaderboard = localStorage.getItem('leaderboard');
+            const scores = savedLeaderboard ? JSON.parse(savedLeaderboard) : [];
+            scores.push(attempts);
+            scores.sort((a, b) => a - b); // Sort scores in ascending order
+            saveLeaderboard(scores);
+            loadLeaderboard();
+        }
+
+        function startGame() {
+            const difficulty = difficultySelect.value;
+            maxNumber = difficulty === 'easy' ? 50 : difficulty === 'medium' ? 100 : 200;
+            randomNumber = Math.floor(Math.random() * maxNumber) + 1;
+            attempts = 0;
+            timeLeft = 60;
+            message.textContent = '';
+            document.getElementById('guessInput').value = '';
+            timerDisplay.textContent = `Time Left: ${timeLeft} seconds`;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(countdown, 1000);
+            document.getElementById("startButton").style.display = "none";
+            document.getElementById("gameControls").classList.remove("hidden");
+        }
+
+        function countdown() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                timerDisplay.textContent = `Time Left: ${timeLeft} seconds`;
+            } else {
+                clearInterval(timerInterval);
+                message.textContent = "⏰ Time's up! You didn't guess the number.";
+                message.style.color = "red";
+            }
+        }
+
+        function checkGuess() {
+            const guessInput = document.getElementById("guessInput");
+            const guess = Number(guessInput.value);
+            attempts++;
+
+            if (!guess || guess < 1 || guess > maxNumber) {
+                message.textContent = `Please enter a number between 1 and ${maxNumber}.`;
+                message.style.color = "red";
+            } else if (guess === randomNumber) {
+                clearInterval(timerInterval);
+                message.textContent = `🎉 Correct! You guessed it in ${attempts} attempts.`;
+                message.style.color = "green";
+                updateLeaderboard(attempts);
+            } else if (guess < randomNumber) {
+                message.textContent = "📉 Too low! Try again.";
+                message.style.color = "blue";
+            } else {
+                message.textContent = "📈 Too high! Try again.";
+                message.style.color = "blue";
+            }
+        }
+
+        // Load leaderboard on page load
+        loadLeaderboard();
+    </script>
+</body>
+</html>
